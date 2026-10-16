@@ -30,7 +30,7 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-`yolo11n-pose.pt` nằm ở `models/` (hoặc Ultralytics tự tải lần đầu chạy: hãy chạy thử trước khi demo để tránh phát sinh lúc trình bày).
+Trọng số YOLO được `pose.py` tìm theo thứ tự: (1) biến môi trường `REHABTRACK_MODEL` (đường dẫn tới file `.pt`); (2) `models/yolo11n-pose.pt` (cạnh `pose.py`, thư mục `models/` không đưa vào Git); (3) nếu không có cả hai thì dùng tên `yolo11n-pose.pt` và Ultralytics **tự tải lần chạy đầu tiên** (cần mạng): hãy chạy thử một lần trước khi demo để việc tải không phát sinh lúc trình bày.
 
 ## 6. Cách quay clip
 
@@ -52,10 +52,13 @@ Xem `data/VIDEO_GUIDE.md`: giao thức quay, đồng ý của người mẫu, qu
 ## 8. Chạy giao diện
 
 ```bash
-streamlit run app.py
+streamlit run rehabtrack/app.py     # từ thư mục gốc repo
+streamlit run app.py                # hoặc từ thư mục rehabtrack
 ```
 
-`app.py` do đồng đội phụ trách giao diện (UI) cung cấp và sẽ được gộp sau; chưa được kiểm tra ở đây (**NOT TESTED**).
+`app.py` là giao diện Streamlit của Như Ý, nay đã có trong repo và gọi `pose.py` / `metrics.py` của nhóm. **Đã kiểm thử end-to-end** ngày 2026-10-16 trong trình duyệt headless thật với hai clip A/B thật: giao diện hiển thị A = 36.4 độ, B = 17.5 độ, khung hình hợp lệ 100% / 98%, delta +18.9 độ (khớp số đo ở mục 12). Clip sai bài tập cho `INSUFFICIENT_DATA` (không có số đo); file hỏng cho thông báo lỗi dễ đọc.
+
+**Chưa kiểm thử qua giao diện**: chân trái (`side=left`) và chạy GPU.
 
 ## 9. Lệnh đánh giá (`evaluate.py`)
 
@@ -134,7 +137,7 @@ python evaluate.py --manifest data/manifest_smoke_public.csv --output-dir output
 
 Cách đọc đúng: pipeline chạy được trên video người thật (nhiều lần duỗi/gập, confidence gối khoảng 0.88-0.99). **Đây không phải số đo gối hợp lệ**: clip quay trên máy tập gym, camera nằm chéo phía trước (không phải mặt phẳng dọc), thấy cả hai chân. Chân phải/trái cho P10 lệch nhau 2,5 độ, nhưng đó không phải bằng chứng về độ lặp lại hay độ chính xác. Clip này cũng cho thấy `valid_ratio` = 1.00 và confidence cao vẫn không báo được góc camera sai, đúng như giới hạn đã nêu bên dưới. Phép đo thật cần cặp A/B tự quay.
 
-Kiểm tra tích hợp end-to-end (`pose` -> `metrics` -> `evaluate`) trên cặp A/B tự quay: **đã chạy thật ngày 2026-10-16** (kết quả ở phần đầu mục này). `app.py` / `streamlit run`: **NOT TESTED** (UI do thành viên khác làm, sẽ ghép sau).
+Kiểm tra tích hợp end-to-end (`pose` -> `metrics` -> `evaluate`) trên cặp A/B tự quay: **đã chạy thật ngày 2026-10-16** (kết quả ở phần đầu mục này). Giao diện `streamlit run rehabtrack/app.py` cũng đã chạy end-to-end với cặp A/B này trong trình duyệt headless ngày 2026-10-16 (xem mục 8); chân trái qua giao diện và GPU chưa kiểm thử.
 
 ## 13. Dataset công khai (tùy chọn, không phụ thuộc)
 
@@ -164,3 +167,22 @@ Theo dõi nhiều buổi theo thời gian; đối chiếu với goniometer để
 5. (1:20-1:30) Giới hạn: 2D, chưa có goniometer, không có % hồi phục; hướng phát triển.
 
 **Phương án dự phòng**: dùng các clip quay thật đã chuẩn bị sẵn và kết quả đã chạy trước. Nếu YOLO không chạy được, chỉ trình bày `python evaluate.py --synthetic-test` và **nói rõ đây là keypoint synthetic, không phải suy luận trên video**; không ngụ ý rằng đó là kết quả mô hình.
+
+## 17. Cấu trúc repo (Repo layout)
+
+```text
+README.md                    Trang đề bài hackathon (thư mục gốc repo)
+index.html                   Trang đề bài
+rehabtrack/
+  app.py                     Giao diện Streamlit (Như Ý)
+  pose.py                    Trích keypoint bằng YOLO11n-pose (bản chính thức)
+  metrics.py                 Góc gập gối, cổng dữ liệu, so sánh hai buổi (bản chính thức)
+  evaluate.py                CLI đánh giá theo manifest
+  requirements.txt           Thư viện phụ thuộc
+  tests/                     pytest (pose, metrics, evaluation)
+  data/                      Manifest và hướng dẫn quay (video không đưa vào Git)
+  docs/receipts/             Bản ghi kết quả đánh giá đã chạy (CSV)
+  alternatives/              Bản thay thế của Hiển và Kiên, chỉ để tham khảo, không được import
+```
+
+Chạy kiểm thử: `python -m pytest rehabtrack/tests -q` (từ thư mục gốc repo) hoặc `python -m pytest tests -q` (từ thư mục `rehabtrack`). Một test được bỏ qua (skip) khi chưa có trọng số mô hình.
