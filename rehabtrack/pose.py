@@ -20,6 +20,8 @@ from __future__ import annotations
 
 import math
 import os
+import threading
+from functools import lru_cache
 from pathlib import Path
 
 import cv2
@@ -41,9 +43,14 @@ _ENV_MODEL_VAR = "REHABTRACK_MODEL"
 DEFAULT_EDGE_MARGIN = 0.03
 _JOINT_NAMES = ("hip", "knee", "ankle")
 
-# One model load per process.
-_MODEL = None
-_MODEL_SOURCE: str | None = None
+# The UI may run several sessions (threads) in one process:
+#  - _load_model is lru_cache'd on the weights path, so the model is loaded once per path
+#    (clear it with _load_model.cache_clear(), e.g. in tests);
+#  - _LOAD_LOCK stops two threads that both miss the cache from loading the weights twice;
+#  - _INFERENCE_LOCK serialises every model.predict call (one shared model is not assumed
+#    to be safe for concurrent inference).
+_LOAD_LOCK = threading.Lock()
+_INFERENCE_LOCK = threading.Lock()
 
 
 # --------------------------------------------------------------------------- model
@@ -61,8 +68,7 @@ def _resolve_model_path() -> str:
 
 def get_model_name() -> str:
     """Basename of the weights actually used (or that will be used) - for reports."""
-    source = _MODEL_SOURCE if _MODEL_SOURCE else _resolve_model_path()
-    return os.path.basename(source)
+    return os.path.basename(_resolve_model_path())
 
 
 def _get_device() -> str:
@@ -77,17 +83,31 @@ def _get_device() -> str:
     return "cpu"
 
 
-def _get_model():
-    """Load (once) and return the Ultralytics model. ultralytics is imported lazily so
-    `import pose` works even when ultralytics is not installed."""
-    global _MODEL, _MODEL_SOURCE
-    if _MODEL is None:
-        from ultralytics import YOLO  # noqa: WPS433 (lazy on purpose)
+@lru_cache(maxsize=2)
+def _load_model(weights_path: str):
+    """Load the Ultralytics model for `weights_path`; cached per path (call
+    `_load_model.cache_clear()` to reset). ultralytics is imported lazily so
+    `import pose` works even when ultralytics is not installed. A failed load is not
+    cached, so the next call retries."""
+    from ultralytics import YOLO  # noqa: WPS433 (lazy on purpose)
 
-        source = _resolve_model_path()
-        _MODEL = YOLO(source)
-        _MODEL_SOURCE = source
-    return _MODEL
+    return YOLO(weights_path)
+
+
+def _get_model():
+    """The cached model for the currently resolved weights path (loaded on first use)."""
+    weights_path = _resolve_model_path()
+    with _LOAD_LOCK:
+        return _load_model(weights_path)
+
+
+def _inference_error(weights_path: str) -> RuntimeError:
+    """The single error callers see when loading the model or running predict fails.
+    Raise it `from exc` so the original cause stays attached."""
+    return RuntimeError(
+        "YOLO pose inference failed. Check the ultralytics/torch installation and "
+        f"access to the weights file {weights_path}."
+    )
 
 
 # ------------------------------------------------------------------- pure helpers
@@ -316,6 +336,8 @@ def extract_video_pose(
     Raises:
         ValueError: invalid `side` / `edge_margin`, unreadable/empty video, or no valid FPS.
         FileNotFoundError: `video_path` does not exist.
+        RuntimeError: loading the YOLO model or running predict failed (original exception
+            kept as `__cause__`). Input errors above are never wrapped in it.
     """
     if side not in _SIDE_INDICES:
         raise ValueError(f"side phải là 'left' hoặc 'right', nhận được {side!r}")
@@ -334,14 +356,23 @@ def extract_video_pose(
         frame_idx = 0
         device = None
         model = None
+        weights_path = None
         while capture.grab():
             if frame_idx % stride == 0:
                 ok, frame = capture.retrieve()
                 if ok and frame is not None:
                     if model is None:
-                        model = _get_model()
-                        device = _get_device()
-                    results = model.predict(frame, device=device, verbose=False)
+                        weights_path = _resolve_model_path()
+                        try:
+                            model = _get_model()
+                            device = _get_device()
+                        except Exception as exc:  # KeyboardInterrupt is not an Exception
+                            raise _inference_error(weights_path) from exc
+                    try:
+                        with _INFERENCE_LOCK:
+                            results = model.predict(frame, device=device, verbose=False)
+                    except Exception as exc:
+                        raise _inference_error(weights_path) from exc
                     time_s = frame_idx / float(fps)
                     result = results[0] if len(results) else None
                     frame_height, frame_width = frame.shape[:2]  # decoded (rotation-aware)
