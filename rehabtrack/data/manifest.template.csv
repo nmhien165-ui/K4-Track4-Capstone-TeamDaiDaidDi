@@ -1,0 +1,5 @@
+clip_id,relative_path,participant_id,session_label,exercise,side,camera_view,source_type,consent_confirmed,paired_group,notes
+participant_01_session_before,data/session_before.mp4,participant_01,A,seated_knee_extension,right,side,staged_real,no,pair_01,PLACEHOLDER - file not recorded yet. Session A = staged limited extension. Set consent_confirmed to yes only after the participant confirms.
+participant_01_session_after,data/session_after.mp4,participant_01,B,seated_knee_extension,right,side,staged_real,no,pair_01,PLACEHOLDER - file not recorded yet. Session B = staged greater extension. Same person; same leg; same camera as A.
+participant_01_occluded,data/occluded.mp4,participant_01,failure_occluded,seated_knee_extension,right,side,staged_real,no,,PLACEHOLDER - file not recorded yet. Optional failure clip: ankle partly covered. Never paired.
+participant_01_bad_angle,data/bad_angle.mp4,participant_01,failure_bad_angle,seated_knee_extension,right,oblique,staged_real,no,,PLACEHOLDER - file not recorded yet. Optional failure clip: camera rotated off the side view. Never paired.

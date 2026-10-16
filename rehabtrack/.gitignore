@@ -1,0 +1,44 @@
+# Python / tooling
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Videos (simulated and volunteer clips are shared out-of-band, never committed
+# unless their publication is explicitly approved)
+data/*.mp4
+data/*.MP4
+data/*.mov
+data/*.MOV
+data/*.avi
+data/*.AVI
+data/*.mkv
+data/*.webm
+*.mp4
+*.MP4
+*.mov
+*.MOV
+*.avi
+*.AVI
+
+# Local-only external/public clips used for smoke tests
+data/external/
+
+# Keep these data docs tracked:
+!data/VIDEO_GUIDE.md
+!data/manifest.csv
+!data/README.md
+
+# Model weights, generated outputs and run directories
+outputs/
+models/*.pt
+*.pt
+*.onnx
+runs/
+
+# Secrets and logs
+.env
+.env.*
+!.env.example
+*.log
