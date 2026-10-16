@@ -1,0 +1,4 @@
+# Shared local Python environment at the repository root.
+.venv/
+__pycache__/
+*.py[cod]
