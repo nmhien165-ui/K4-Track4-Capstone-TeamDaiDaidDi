@@ -1,0 +1,34 @@
+# Videos (simulated clips are shared out-of-band, never committed)
+data/*.mp4
+data/*.MP4
+data/*.mov
+data/*.MOV
+data/*.avi
+data/*.AVI
+data/*.mkv
+data/*.webm
+*.mp4
+*.mov
+*.avi
+
+# Keep these data docs tracked:
+!data/VIDEO_GUIDE.md
+!data/manifest.csv
+!data/README.md
+
+# Generated outputs and model weights
+outputs/
+models/*.pt
+*.pt
+
+# Python / tooling
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Secrets and logs
+.env
+.env.*
+*.log

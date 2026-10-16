@@ -1,0 +1,2 @@
+pair_id,a_clip_id,b_clip_id,a_best_extension_flexion_deg,b_best_extension_flexion_deg,delta_extension_deg,status,warnings
+pair_01,participant_01_session_before,participant_01_session_after,36.407,17.459,18.948,ok,"Sai số đo chưa được định lượng (không có ground truth từ thước đo góc/goniometer); không được hiểu là độ chính xác theo độ. | Phép so sánh chỉ có ý nghĩa khi hai video cùng một người, cùng một chân và cùng vị trí đặt camera."
