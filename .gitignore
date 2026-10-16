@@ -2,3 +2,18 @@
 .venv/
 __pycache__/
 *.py[cod]
+.pytest_cache/
+
+# Model weights are fetched automatically on first use (Ultralytics writes them into the
+# current working directory, which can be the repository root); never commit them.
+*.pt
+*.onnx
+
+# Participant videos and generated evaluation output stay local.
+*.mp4
+*.mov
+*.avi
+*.MP4
+*.MOV
+*.AVI
+outputs/
