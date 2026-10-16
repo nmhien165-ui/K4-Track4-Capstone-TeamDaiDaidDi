@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.py[cod]
+*.pt
+*.onnx
+runs/
+.env
+.env.*
+!.env.example
+# Volunteer videos stay local unless their publication is explicitly approved.
+data/*.mp4
+data/*.mov
+data/*.avi
+data/*.MP4
+data/*.MOV
+data/*.AVI
